@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shahanas/viewmodel/datacontroller.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart'; 
+import 'package:geocoding/geocoding.dart';
 
 class AddLocationViewModel extends GetxController {
   final streetController = TextEditingController();
@@ -15,114 +17,126 @@ class AddLocationViewModel extends GetxController {
 
   final PropertyFormController formController = Get.find();
 
+  var loadingText = 'Loading'.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    // Start animation loop
+    int dotCount = 0;
+    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      dotCount = (dotCount + 1) % 4; // cycle from 0 to 3
+      loadingText.value = 'Location fetching${'.' * dotCount}';
+    });
+  }
+
   void updateLocationLabel(String label) {
     locationLabel.value = label;
   }
 
-var currentLatLng = Rx<LatLng?>(null);
+  var currentLatLng = Rx<LatLng?>(null);
 
-Future<void> getLocation(BuildContext context) async {
-  // request permission
-  LocationPermission permission = await Geolocator.requestPermission();
+  Future<void> getLocation(BuildContext context) async {
+    // request permission
+    await Geolocator.requestPermission();
 
-  // get location
-  Position position = await Geolocator.getCurrentPosition();
+    // get location
+    Position position = await Geolocator.getCurrentPosition();
 
-  currentLatLng.value = LatLng(position.latitude, position.longitude);
-  accuracy.value = position.accuracy;
-  locationLabel.value = "${position.latitude}, ${position.longitude}";
-}
-
-
-void getCurrentLocation(BuildContext context) async {
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
-  if (!serviceEnabled) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Location Disabled"),
-        content: Text("Location is required. Please enable it."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Geolocator.openLocationSettings();
-              Navigator.pop(context);
-            },
-            child: Text("Enable"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-        ],
-      ),
-    );
-    return;
+    currentLatLng.value = LatLng(position.latitude, position.longitude);
+    accuracy.value = position.accuracy;
+    locationLabel.value = "${position.latitude}, ${position.longitude}";
   }
 
-  LocationPermission permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) {
+  void getCurrentLocation(BuildContext context) async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Location Disabled"),
+          content: Text("Location is required. Please enable it."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Geolocator.openLocationSettings();
+                Navigator.pop(context);
+              },
+              child: Text("Enable"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+          ],
+        ),
+      );
       return;
     }
-  }
 
-  if (permission == LocationPermission.deniedForever) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Permission Permanently Denied"),
-        content: Text("Please enable location permission from app settings."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Geolocator.openAppSettings();
-              Navigator.pop(context);
-            },
-            child: Text("Open Settings"),
-          ),
-        ],
-      ),
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Permission Permanently Denied"),
+          content: Text("Please enable location permission from app settings."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Geolocator.openAppSettings();
+                Navigator.pop(context);
+              },
+              child: Text("Open Settings"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    //  Fetch GPS location
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
     );
-    return;
+
+    accuracy.value = position.accuracy;
+
+    //  Reverse geocoding
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      final Placemark place = placemarks[0];
+
+      String readableLocation =
+          "${place.name}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}";
+
+      locationLabel.value = readableLocation;
+
+      formController.locationLabel.value = readableLocation;
+    } else {
+      // fallback to coordinates if place name not found
+      locationLabel.value = "${position.latitude}, ${position.longitude}";
+      formController.locationLabel.value = locationLabel.value;
+    }
+
+    //  Save other fields as well
+    formController.street.value = streetController.text;
+    formController.building.value = buildingController.text;
+    formController.area.value = areaController.text;
   }
-
-  //  Fetch GPS location
-  Position position = await Geolocator.getCurrentPosition(
-    desiredAccuracy: LocationAccuracy.high,
-  );
-
-  accuracy.value = position.accuracy;
-
-  //  Reverse geocoding
-  List<Placemark> placemarks = await placemarkFromCoordinates(
-    position.latitude,
-    position.longitude,
-  );
-
-  if (placemarks.isNotEmpty) {
-    final Placemark place = placemarks[0];
-
-    String readableLocation =
-        "${place.name}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}";
-
-    locationLabel.value = readableLocation;
-
-    formController.locationLabel.value = readableLocation;
-  } else {
-    // fallback to coordinates if place name not found
-    locationLabel.value = "${position.latitude}, ${position.longitude}";
-    formController.locationLabel.value = locationLabel.value;
-  }
-
-  //  Save other fields as well
-  formController.street.value = streetController.text;
-  formController.building.value = buildingController.text;
-  formController.area.value = areaController.text;
-}
-
 
   void saveInputs() {
     formController.street.value = streetController.text;

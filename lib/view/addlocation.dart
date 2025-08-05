@@ -95,13 +95,16 @@ class AddLocationView extends StatelessWidget {
               const SizedBox(height: 10),
 
               /// Location Label
-              Obx(
-                () => Text(
-                  controller.locationLabel.value,
+              Obx(() {
+                final label = controller.locationLabel.value;
+
+                return Text(
+                  label.isEmpty ? controller.loadingText.value : label,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
+                );
+              }),
+
               const SizedBox(height: 20),
 
               /// Reusable Input Fields
@@ -127,14 +130,33 @@ class AddLocationView extends StatelessWidget {
                     width: 100,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: AppColors.secondary,
                         foregroundColor: AppColors.white,
                       ),
                       onPressed: () {
-                        controller.saveInputs();
-                        // print(controller.streetController.text.trim());
-                        Get.to(() => const PropertyDetailsView());
+                        final isStreetFilled = controller.streetController.text
+                            .trim()
+                            .isNotEmpty;
+                        final isLocationLabelFilled = controller
+                            .locationLabel
+                            .value
+                            .trim()
+                            .isNotEmpty;
+
+                        if (isStreetFilled || isLocationLabelFilled) {
+                          controller.saveInputs();
+                          Get.to(() => const PropertyDetailsView());
+                        } else {
+                          Get.snackbar(
+                            'Missing Information',
+                            'Please enter street name or use current location.',
+                            backgroundColor: AppColors.primary,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        }
                       },
+
                       child: const Text("Next"),
                     ),
                   ),

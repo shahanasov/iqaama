@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shahanas/core/theme.dart';
 import 'package:shahanas/view/review.dart';
 import 'package:shahanas/view/widgets/appbar.dart';
 import 'package:shahanas/view/widgets/currency.dart';
@@ -35,11 +36,17 @@ class PricingView extends StatelessWidget {
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 25),
-              const Text('Monthly Rent'),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [const Text('Monthly Rent'), SizedBox()],
+              ),
+              SizedBox(height: 5,),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  SizedBox(width: 100, child: CurrencyDropdown()),
-                  const SizedBox(width: 10), // spacing between widgets
+                  SizedBox(width: 80, child: CurrencyDropdown()),
+                  const SizedBox(width: 1),
                   Expanded(
                     // This is important
                     child: CustomTextField(
@@ -52,6 +59,7 @@ class PricingView extends StatelessWidget {
 
               const SizedBox(height: 16),
               const Text('Security Deposit'),
+              SizedBox(height: 5,),
               CustomSelector(
                 options: depositOptions,
                 selected: viewModel.selectedDeposit.value,
@@ -59,6 +67,8 @@ class PricingView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text('Available From'),
+              
+              SizedBox(height: 5,),
               TextField(
                 readOnly: true,
                 controller: TextEditingController(
@@ -99,16 +109,31 @@ class PricingView extends StatelessWidget {
               const Text('Commission'),
               CustomTextField(
                 hint: 'Enter commission',
-               controller: viewModel.commissionController,
-               
+                controller: viewModel.commissionController,
+
                 // onChanged: (val) => viewModel.commission.value = val,
               ),
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                   viewModel.saveToMainController();
-                  Get.to(() => ReviewView());
+                  final isAmountFilled = viewModel.amountController.text
+                      .trim()
+                      .isNotEmpty;
+
+                  if (isAmountFilled) {
+                    viewModel.saveToMainController();
+                    Get.to(() => ReviewView());
+                  } else {
+                    Get.snackbar(
+                      'Missing Amount',
+                      'Please enter the monthly rent amount before proceeding.',
+                      backgroundColor: AppColors.primary,
+                      colorText: AppColors.white,
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
                 },
+
                 child: const Text('Next'),
               ),
             ],
@@ -118,4 +143,3 @@ class PricingView extends StatelessWidget {
     );
   }
 }
-

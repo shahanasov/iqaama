@@ -2,7 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shahanas/core/theme.dart';
+import 'package:shahanas/view/addlocation.dart';
+import 'package:shahanas/view/amenitites.dart';
+import 'package:shahanas/view/photos_screen.dart';
+import 'package:shahanas/view/pracing.dart';
 import 'package:shahanas/view/widgets/appbar.dart';
 import 'package:shahanas/view/success_screen.dart';
 import 'package:shahanas/viewmodel/datacontroller.dart';
@@ -29,7 +34,9 @@ class ReviewView extends StatelessWidget {
               ),
               InfoCard(
                 title: 'Property Overview',
-                onEdit: () {},
+                onEdit: () {
+                  Get.offAll(() => AddLocationView());
+                },
                 child: Row(
                   children: [
                     Expanded(
@@ -40,21 +47,51 @@ class ReviewView extends StatelessWidget {
                             propertyController.title.value,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text(propertyController.street.value),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.65,
+                            child: Text(
+                              propertyController.street.value.isNotEmpty
+                                  ? propertyController.street.value
+                                  : propertyController.locationLabel.value,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           Text(
                             'Rent ${propertyController.amount.value} / ${propertyController.paymentTerm.value}',
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Icon(Icons.map, size: 48, color: Colors.blue),
+                    // Small map
+                    Container(
+                      height: 80,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        border: BoxBorder.all(),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: GoogleMap(
+                          zoomGesturesEnabled: true,
+                          zoomControlsEnabled: false,
+                          initialCameraPosition: CameraPosition(
+                            target: LatLng(10.8505, 76.2711),
+                            zoom: 14,
+                          ),
+                          myLocationButtonEnabled: true,
+                          onMapCreated: (GoogleMapController controller) {},
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
               InfoCard(
                 title: 'Photo Gallery',
-                onEdit: () {},
+                onEdit: () {
+                  Get.offAll(() => PropertyPhotoScreen());
+                },
                 child: Obx(() {
                   if (propertyController.photos.isEmpty) {
                     return const Text("No photos uploaded.");
@@ -86,7 +123,9 @@ class ReviewView extends StatelessWidget {
               ),
               InfoCard(
                 title: 'Amenities',
-                onEdit: () {},
+                onEdit: () {
+                  Get.offAll(() => AmenitiesView());
+                },
                 child: Wrap(
                   spacing: 12,
                   children: propertyController.amenities
@@ -96,7 +135,9 @@ class ReviewView extends StatelessWidget {
               ),
               InfoCard(
                 title: 'Lease Terms',
-                onEdit: () {},
+                onEdit: () {
+                  Get.offAll(() => PricingView());
+                },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

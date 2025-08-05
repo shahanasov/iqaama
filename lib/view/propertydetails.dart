@@ -145,10 +145,25 @@ class PropertyDetailsView extends StatelessWidget {
                     const Text("Step 3 of 7 – Details"),
                     ElevatedButton(
                       onPressed: () {
-                        controller
-                            .saveInputs(); // Save all data to shared controller
-                        Get.to(() => AmenitiesView());
+                        final isTitleFilled = controller.titleController.text
+                            .trim()
+                            .isNotEmpty;
+
+                        if (isTitleFilled) {
+                          controller
+                              .saveInputs(); // Save all data to shared controller
+                          Get.to(() => AmenitiesView());
+                        } else {
+                          Get.snackbar(
+                            'Missing Title',
+                            'Please enter the property title before proceeding.',
+                            backgroundColor: AppColors.primary,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        }
                       },
+
                       child: const Text("Next"),
                     ),
                   ],
