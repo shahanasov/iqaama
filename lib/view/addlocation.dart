@@ -4,6 +4,7 @@ import 'package:shahanas/core/theme.dart';
 import 'package:shahanas/view/propertydetails.dart';
 import 'package:shahanas/view/widgets/textfield.dart';
 import 'package:shahanas/viewmodel/location.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class AddLocationView extends StatelessWidget {
   const AddLocationView({super.key});
@@ -63,11 +64,34 @@ class AddLocationView extends StatelessWidget {
               const SizedBox(height: 10),
 
               /// Map Placeholder
-              Container(
-                height: 200,
-                color: Colors.grey.shade300,
-                child: const Center(child: Text("Map goes here")),
-              ),
+              Obx(() {
+                final latLng =
+                    controller.currentLatLng.value ??
+                    const LatLng(10.8505, 76.2711);
+
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: GoogleMap(
+                      zoomGesturesEnabled: true,
+                      zoomControlsEnabled: false,
+                      initialCameraPosition: CameraPosition(
+                        target: latLng,
+                        zoom: 14,
+                      ),
+                      myLocationButtonEnabled: true,
+                      onMapCreated: (GoogleMapController controller) {
+                        // Save controller if needed
+                      },
+                    ),
+                  ),
+                );
+              }),
+
               const SizedBox(height: 10),
 
               /// Location Label

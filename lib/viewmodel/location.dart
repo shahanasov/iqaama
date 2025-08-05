@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shahanas/viewmodel/datacontroller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; 
@@ -18,6 +19,19 @@ class AddLocationViewModel extends GetxController {
     locationLabel.value = label;
   }
 
+var currentLatLng = Rx<LatLng?>(null);
+
+Future<void> getLocation(BuildContext context) async {
+  // request permission
+  LocationPermission permission = await Geolocator.requestPermission();
+
+  // get location
+  Position position = await Geolocator.getCurrentPosition();
+
+  currentLatLng.value = LatLng(position.latitude, position.longitude);
+  accuracy.value = position.accuracy;
+  locationLabel.value = "${position.latitude}, ${position.longitude}";
+}
 
 
 void getCurrentLocation(BuildContext context) async {
